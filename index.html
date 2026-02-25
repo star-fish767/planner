@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Planner Studio Pro</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <h1>Planner Studio Pro</h1>
+        <p>Drag, resize, minimize windows, and organize your planning + learning cockpit.</p>
+      </div>
+      <button id="reset-layout">Reset Layout</button>
+    </header>
+
+    <div id="minimized-dock" class="minimized-dock" aria-label="Minimized windows"></div>
+
+    <main id="workspace" class="workspace">
+      <section class="window" id="tasks-window" data-title="Tasks">
+        <h2 class="window-title">1) Daily • Weekly • Monthly Tasks</h2>
+        <div class="task-controls">
+          <label for="task-scope">Scope</label>
+          <select id="task-scope"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select>
+          <input id="task-input" type="text" placeholder="Add a task..." />
+          <button id="add-task">Add</button>
+        </div>
+        <div class="task-lists">
+          <article><h3>Daily</h3><ul id="daily-list"></ul></article>
+          <article><h3>Weekly</h3><ul id="weekly-list"></ul></article>
+          <article><h3>Monthly</h3><ul id="monthly-list"></ul></article>
+        </div>
+      </section>
+
+      <section class="window" id="draft-window" data-title="Draft Editor">
+        <h2 class="window-title">2) Draft Structure Editor</h2>
+        <div class="row">
+          <button id="preset-philosophy-article">Philosophy article structure</button>
+          <button id="preset-dissertation">Dissertation chapter structure</button>
+          <button id="preset-argument-map">Argument map structure</button>
+        </div>
+        <textarea id="draft-editor" rows="10" placeholder="Write your planning structure here..."></textarea>
+      </section>
+
+      <section class="window" id="logic-window" data-title="Formal Logic">
+        <h2 class="window-title">3) Random Formal Logic Exercise</h2>
+        <p id="logic-exercise" class="exercise"></p>
+        <button id="new-exercise">Generate Exercise</button>
+      </section>
+
+      <section class="window" id="german-window" data-title="German Trainer">
+        <h2 class="window-title">4) German Vocabulary + Sentence Exercise</h2>
+        <p id="german-prompt"></p>
+        <input id="german-answer" type="text" placeholder="English translation" />
+        <div class="row"><button id="check-german">Check Translation</button><button id="next-german">Next Word</button></div>
+        <label for="german-sentence" class="label">Create a full German sentence with the shown word:</label>
+        <textarea id="german-sentence" rows="3" placeholder="Ich lerne heute ..."></textarea>
+        <button id="check-sentence">Check Sentence Exercise</button>
+        <p id="german-feedback" class="feedback"></p>
+      </section>
+
+      <section class="window" id="youtube-window" data-title="Flow Video">
+        <h2 class="window-title">5) YouTube Flow State Studio Player</h2>
+        <div class="row"><input id="youtube-url" type="text" placeholder="YouTube URL or video ID" /><button id="load-video">Load Video</button></div>
+        <div class="video-wrap"><iframe id="youtube-player" src="https://www.youtube.com/embed/4xDzrJKXOOY" title="Flow video" allowfullscreen></iframe></div>
+      </section>
+
+      <section class="window" id="raw-window" data-title="Raw Text Tools">
+        <h2 class="window-title">6) Raw Text Cleaner + Grammar Checker GPU</h2>
+        <textarea id="raw-input" rows="7" placeholder="Paste raw, unedited text here..."></textarea>
+        <div class="row"><button id="normalize-breaks">Remove line/page breaks</button><button id="fix-hyphens">Change em dash (—) to en dash (–)</button><button id="gpu-grammar">Grammar Checker GPU</button></div>
+        <p id="gpu-status" class="hint"></p>
+      </section>
+
+      <section class="window" id="compare-window" data-title="Compare Languages">
+        <h2 class="window-title">7) Dual Language Text Compare</h2>
+        <div class="row">
+          <button id="mark-yellow">Mark yellow</button>
+          <button id="mark-green">Mark green</button>
+          <button id="clear-mark">Clear mark</button>
+        </div>
+        <div class="split">
+          <div id="compare-left" class="compare-editor" contenteditable="true" spellcheck="true" data-placeholder="Language A text"></div>
+          <div id="compare-right" class="compare-editor" contenteditable="true" spellcheck="true" data-placeholder="Language B text"></div>
+        </div>
+      </section>
+
+      <section class="window" id="semantics-window" data-title="Semantics Passage">
+        <h2 class="window-title">8) Random Analytic Philosophy Passage (1000 words)</h2>
+        <p class="hint">Verbatim-style passages from chapter body text (intro/foreword skipped).</p>
+        <p id="semantics-meta" class="hint"></p>
+        <p id="semantics-passage" class="exercise"></p>
+        <button id="new-semantics">New Passage</button>
+      </section>
+
+      <section class="window" id="hegel-window" data-title="Hegel Passage">
+        <h2 class="window-title">9) Random Hegel: Science of Logic (Verbatim Excerpts)</h2>
+        <p id="hegel-paragraph" class="exercise"></p>
+        <button id="new-hegel">New Paragraph</button>
+      </section>
+
+      <section class="window" id="habit-window" data-title="Habits">
+        <h2 class="window-title">10) Habit Tracker + Today's Routine</h2>
+        <div class="habit-list">
+          <label><input id="habit-pullups" type="checkbox" /> Pull-ups target done</label>
+          <label><input id="habit-pushups" type="checkbox" /> Push-ups target done</label>
+          <label><input id="habit-lifts" type="checkbox" /> 5kg lifts target done</label>
+        </div>
+        <button id="save-habits">Save Habits</button>
+        <h3>Today (D1)</h3>
+        <p id="routine-today" class="exercise"></p>
+      </section>
+
+      <section class="window" id="guitar-window" data-title="Guitar Shorts">
+        <h2 class="window-title">11) Guitar Solo Licks (YouTube Shorts)</h2>
+        <p id="guitar-phrase" class="exercise"></p>
+        <div class="row"><button id="new-phrase">Generate Guitar Shorts Pick</button><a id="guitar-search-link" target="_blank" rel="noopener noreferrer">Open Shorts search results</a></div>
+        <div class="shorts-wrap"><iframe id="guitar-video" src="https://www.youtube.com/embed/2Vv-BfVoq4g" title="Guitar short style" allowfullscreen></iframe></div>
+      </section>
+
+      <section class="window" id="hegel-news-window" data-title="Hegelpd News + Publications">
+        <h2 class="window-title">12) Hegelpd Recent (Last 2 Weeks) + Hegel Articles</h2>
+        <div class="row"><button id="refresh-hegel-news">Refresh News + Publications</button></div>
+        <p id="hegel-news-status" class="hint">Loading latest posts...</p>
+        <ul id="hegel-news-list" class="news-list"></ul>
+        <h3>Latest article publications on Hegel (no chapters)</h3>
+        <p id="scopus-status" class="hint">Loading publication links...</p>
+        <ul id="scopus-list" class="news-list"></ul>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
