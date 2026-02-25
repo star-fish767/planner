@@ -39,3 +39,30 @@ Copy that zip to your computer, unzip, then run launcher (`launch.bat` or `launc
 
 ## Stop the app
 In the terminal running the launcher, press `Ctrl+C`.
+
+
+## If GitHub Pull Request did not work
+
+If your PR creation failed, use this exact fallback sequence from your local clone:
+
+```bash
+git status
+git remote -v
+# if needed, set your GitHub repo URL:
+# git remote set-url origin https://github.com/<your-user>/planner.git
+
+git push -u origin <your-branch-name>
+```
+
+Then open your branch in GitHub and click **Compare & pull request**.
+
+### Common causes
+- **Binary file restrictions in PR checks**: this repo ignores generated zips (`dist/*.zip`), so regenerate locally but do not commit the zip.
+- **Wrong remote URL**: verify with `git remote -v`.
+- **Not authenticated**: re-auth in GitHub CLI or your git credential manager.
+
+### Optional: generate zip locally for download/copy
+```bash
+python3 package_app.py
+```
+This writes `dist/planner-studio-pro.zip` locally.
