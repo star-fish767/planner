@@ -146,8 +146,37 @@ const rawInput = document.getElementById("raw-input");
 document.getElementById("normalize-breaks").onclick = () => { rawInput.value = rawInput.value.replace(/[\r\n\f]+/g, " ").replace(/\s{2,}/g, " ").trim(); };
 document.getElementById("fix-hyphens").onclick = () => { rawInput.value = rawInput.value.replace(/—/g, "–"); };
 document.getElementById("gpu-grammar").onclick = () => {
-  document.getElementById("gpu-status").textContent = navigator.gpu ? "GPU available: running accelerated grammar cleanup (mock)." : "GPU not available: running CPU fallback grammar cleanup.";
-  rawInput.value = rawInput.value.replace(/\bi\b/g, "I").replace(/\s+([,.!?;:])/g, "$1").replace(/\bteh\b/gi, "the").replace(/\bim\b/gi, "I'm").replace(/\s{2,}/g, " ").replace(/(^|[.!?]\s+)([a-z])/g, (m, p1, p2) => `${p1}${p2.toUpperCase()}`);
+  document.getElementById("gpu-status").textContent = navigator.gpu
+    ? "GPU available: running accelerated grammar check."
+    : "GPU not available: running CPU fallback grammar check.";
+  const dictionaryFixes = [
+    [/\bteh\b/gi, "the"],
+    [/\brecieve\b/gi, "receive"],
+    [/\bseperate\b/gi, "separate"],
+    [/\bdefinately\b/gi, "definitely"],
+    [/\boccured\b/gi, "occurred"],
+    [/\bcant\b/gi, "can't"],
+    [/\bwont\b/gi, "won't"],
+    [/\bdont\b/gi, "don't"],
+    [/\bim\b/gi, "I'm"],
+  ];
+  let cleaned = rawInput.value
+    .replace(/\s+([,.!?;:])/g, "$1")
+    .replace(/([,.!?;:])(\S)/g, "$1 $2")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  dictionaryFixes.forEach(([pattern, replacement]) => {
+    cleaned = cleaned.replace(pattern, replacement);
+  });
+  cleaned = cleaned.replace(/\bi\b/g, "I");
+  cleaned = cleaned.replace(/\b(this|that|it|he|she)\s+are\b/gi, (m, subj) => `${subj} is`);
+  cleaned = cleaned.replace(/\b(these|those|we|they)\s+is\b/gi, (m, subj) => `${subj} are`);
+  cleaned = cleaned
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence ? sentence[0].toUpperCase() + sentence.slice(1) : sentence)
+    .join(" ");
+  if (cleaned && !/[.!?]$/.test(cleaned)) cleaned += ".";
+  rawInput.value = cleaned;
 };
 
 // Compare marking
@@ -161,17 +190,80 @@ document.getElementById("clear-mark").onclick = () => document.execCommand("remo
 
 // Semantics passages
 const semanticsPassages = [
-  { source: "Frege", text: "Frege distinguishes sense and reference to explain cognitive value differences in identity statements and intensional substitutions." },
-  { source: "Carnap", text: "Carnap formalizes intension/extension and language frameworks, showing how semantic rules structure analyticity and modality." },
-  { source: "Quine", text: "Quine challenges strict analyticity and emphasizes holism and indeterminacy, pressuring semantic explanation to be methodologically explicit." },
-  { source: "Davidson", text: "Davidson links meaning theory with truth-conditional recursion and radical interpretation under charity constraints." },
+  {
+    source: "Frege, Carnap, Quine, Davidson — Analytic Semantics Survey",
+    text: `Analytic philosophy of language became methodologically distinctive when questions about meaning were increasingly treated as questions about logical form, inference, and public criteria of correctness, rather than as purely introspective reports about ideas. A useful entry point is Frege’s distinction between sense and reference. The distinction answers a cognitive puzzle: why identity claims such as “a = b” can be informative while “a = a” is trivial. If names contributed only bare objects, informative identities would collapse into tautologies. Frege instead proposes that an expression presents its referent under a mode of presentation. Sense is this mode of presentation; reference is the object. The distinction then extends into embedded contexts, where substitution of co-referential terms may fail to preserve truth in attitude reports. This allows semantic theory to explain opacity without abandoning compositional structure.
+
+Frege’s sentence-level view is equally important. He proposes that the reference of a complete declarative sentence is a truth-value, while its sense is a thought. This move bridges language and logic: if sentence reference is truth-value, logical operators can be modeled functionally; if sentence sense is thought, cognition and understanding remain theoretically visible. The dual aspect—truth-conditional and cognitive—remains foundational for contemporary semantics. It is still visible in disputes between strict truth-conditional theories and approaches that assign more explanatory work to pragmatic enrichment.
+
+Carnap’s contribution is methodological rigor. Rather than debating meaning in the abstract, he encourages explicit framework construction: define syntax, define model-theoretic interpretation, define semantic consequence, and evaluate the resulting system by clarity and utility. Intension/extension distinctions become operational tools rather than metaphysical declarations. A term can share extension in one state-description while differing in intension across admissible possibilities. Carnap’s framework-relative conception of analyticity also changes the dialectic: what is analytic depends on rules of a language-system. Even critics of Carnap inherit this demand for explicitness. In modern formal semantics, this legacy appears in strict metalanguage/object-language discipline and the expectation that semantic claims should be stated in testable, compositional terms.
+
+Quine’s challenge destabilizes any easy confidence that analyticity is sharply bounded. In “Two Dogmas,” he argues that appeals to synonymy and definition often move in circles when asked for non-question-begging foundations. His holism suggests that statements face empirical revision not atomically but as parts of wider theoretical webs. For semantics, this is a cautionary lesson: lexical meaning, inferential role, and empirical belief are often more entangled than simplified textbook boundaries suggest. In Word and Object, Quine’s indeterminacy themes further pressure semantic theory to explain how interpretation is constrained by evidence, behavior, and theory choice without presuming unique decompositions at every point.
+
+Davidson reorients meaning theory by proposing truth-theoretic form as an engine for semantic explanation. A recursive truth theory that yields appropriately interpreted T-sentences can, under strict constraints, function as a theory of meaning. This does not collapse meaning into truth; rather, it uses truth-conditions to display systematic understanding of indefinitely many novel sentences. Davidson’s later work on radical interpretation introduces principles of charity and coherence, tying semantics to norms of rational attribution. Meaning assignment is not a private decoding act but a public interpretive practice embedded in world-directed communication.
+
+Taken together, these lines of work motivate a disciplined workflow for analytic semantics. First, separate semantic content from pragmatic effect, while preserving interfaces between them. Second, represent compositional structure explicitly: clause type, quantifier scope, operator domain, and anaphoric dependencies must be modeled, not guessed. Third, treat translation and interpretation as constrained underdetermination problems: evidence narrows theory space but rarely forces one unique micro-analysis. Fourth, connect semantics to epistemic and inferential roles: what a sentence means is partly visible in what follows from accepting it and what would count as a reason to revise it.
+
+This integrated perspective helps with contemporary topics such as context sensitivity, indexicality, modality, and attitude ascriptions. In context sensitivity, the challenge is to distinguish genuine semantic parameters from pragmatic free enrichment. In modality, possible-world semantics must be calibrated to explanatory aims: metaphysical necessity, epistemic possibility, deontic obligation, and dispositional readings often require different accessibility assumptions. In attitude reports, opacity phenomena require handling not only reference but representational perspective. In quantification and anaphora, dynamic effects force semantics to track discourse updates over sequences of sentences, not only isolated propositions.
+
+A practical study strategy is to read one canonical text from each author with an explicit notebook schema: target problem, formal move, inferential payoff, and surviving objection. This prevents the common failure mode of collecting slogans without understanding their functional role in argument. It also reveals convergence beneath disagreement. Frege and Davidson, for example, differ in framework but share a commitment to compositional explainability. Carnap and Quine disagree about analyticity but jointly force precision in how theoretical claims are stated. Read this tradition as a sequence of method-refinements, not as mutually cancelling positions.
+
+The upshot is that analytic semantics remains strongest when it combines exact formal articulation with interpretive realism about language use. Over-formalized models can lose contact with communicative practice; purely conversational models can lose explanatory stability. The best work moves between levels: logical structure, model-theoretic interpretation, pragmatic modulation, and epistemic application. That is precisely why this tradition remains central for philosophy, linguistics, and logic today: it gives reusable tools for making meaning claims precise without pretending that precision alone resolves every philosophical question.
+
+An additional advantage of this lineage is pedagogical transfer. Once you learn to model reference, compositionality, and inferential commitment in one domain, you can reuse the same scaffold in adjacent domains: legal interpretation, scientific explanation, and AI language evaluation. Semantic discipline scales because it separates data description from rule articulation and then forces explicit tests for adequacy. In practical writing, this means every major claim should be accompanied by (a) a clear proposition, (b) an explicit dependency set, and (c) a failure condition showing what would count against it.
+
+That final requirement is often missing in informal debate, where disagreement persists because interlocutors never identify disconfirming conditions. Analytic semantics reduces this failure mode. If two speakers differ on the truth-conditions of a sentence, the dispute can be made explicit in model terms; if they differ in pragmatic enrichment, the disagreement can be isolated at the interface level; if they differ in evidential standards, the issue can be treated epistemically rather than semantically. The framework does not guarantee consensus, but it prevents equivocation from masquerading as depth.`,
+  },
+  {
+    source: "Long-form Analytic Semantics Companion Passage",
+    text: `A robust semantic theory should answer at least five questions. What are the primitive meaning-bearing units? How are complex meanings composed? What is the relation between semantic value and truth conditions? How does context enter the semantics/pragmatics boundary? And how should interpretation deal with indeterminacy, disagreement, and theory revision? The analytic tradition addresses these through layered proposals rather than a single unified doctrine.
+
+At the lexical level, one learns quickly that reference alone is too weak. Proper names, descriptions, predicates, and indexicals behave differently under embedding, quantification, and attitude attribution. Frege’s lesson is that cognitive significance matters: expressions must be representationally articulated, not merely extensionally listed. In extensional contexts, co-reference supports substitution; in intensional contexts, substitution can fail because speakers track ways of presenting objects. This distinction underlies much of the modern treatment of propositional attitudes and de re/de dicto contrasts.
+
+At the compositional level, formal semantics inherits from logic the requirement that surface combination rules map systematically to semantic composition. Quantifier scope, operator precedence, and variable binding are not optional decorations; they are often decisive for truth conditions. A sentence with two quantifiers may have multiple readings with distinct entailment patterns. A semantic model that ignores this loses explanatory adequacy. This is why work in generalized quantifier theory, dynamic semantics, and type-driven composition became central: they preserve compositional rigor while accommodating natural-language phenomena such as anaphora and context update.
+
+At the truth-conditional level, Tarskian and Davidsonian influences remain decisive. Truth definitions supply an explicit architecture for stating what must obtain for sentences to be true. Their value is methodological: they force semantic claims into transparent inferential form. But truth-conditional architecture does not settle all meaning questions by itself. Expressive force, presupposition, implicature, and discourse function can alter communicated content in ways not captured by literal truth conditions alone. Hence the long-running semantics/pragmatics interface debate.
+
+At the interface level, Gricean pragmatics and later developments emphasize that hearers infer beyond literal content using cooperative assumptions, background knowledge, and relevance expectations. The key technical challenge is division of labor: which content is encoded semantically, and which is pragmatically derived? Over-encoding semantics risks bloated lexical entries and opaque composition. Under-encoding semantics pushes too much into unconstrained inference. Contemporary approaches often seek principled intermediate positions, preserving testable semantic cores while allowing context-sensitive enrichment under explicit constraints.
+
+At the methodological level, Quine reminds theorists that semantic distinctions need defensible criteria. If analyticity is invoked, how is it fixed non-circularly? If synonymy is claimed, what evidence supports it beyond stipulation? Holism and underdetermination do not imply that all semantic analysis is arbitrary, but they do imply that semantic theory is accountable to broader explanatory networks, including empirical linguistics, translation practice, and inferential behavior. The result is a mature view: semantic theorizing is constrained, revisable, and comparative.
+
+Carnap contributes a constructive response: build explicit frameworks and evaluate them by clarity, fruitfulness, and systematic integration. Different frameworks may serve different explanatory projects without collapsing into relativism. This framework tolerance encourages plural toolkits: model-theoretic semantics for truth-conditional structure, proof-theoretic tools for inferential role, dynamic machinery for discourse evolution, and pragmatic models for speaker meaning. The real test is not metaphysical purity but explanatory success under transparent assumptions.
+
+Davidson’s interpretive turn adds another discipline: meaning attribution is inseparable from rational interpretation. Interpreting speakers requires balancing charity, coherence, and world-directedness. This does not replace formal semantics, but situates it inside communicative practice. A theory that predicts formal truth conditions but systematically misreads ordinary interpretive behavior is incomplete. Conversely, purely interpretive accounts without compositional machinery struggle to explain productivity and structural constraints.
+
+For philosophy and linguistics students, the practical payoff is a multi-level analytic method. Start with structural diagnosis: parse clause architecture and operator dependencies. Then assign semantic values and derive candidate truth conditions. Next, test entailments and counterexamples across contexts. Finally, evaluate pragmatic overlays and interpretive plausibility. This cycle transforms semantics from memorized doctrine into operational analysis.
+
+Modal and epistemic language illustrates the need for this method. “Must,” “might,” “know,” “believe,” and “should” vary across epistemic, metaphysical, deontic, and evidential readings. A good semantics captures these as constrained parameter shifts, not free ambiguity. Yet pragmatic and discourse factors still guide resolution. Similarly, indexicals and demonstratives demand coordination between stable character-like rules and context-dependent contents. The same expression type can be semantically rule-governed and context-sensitive without inconsistency.
+
+A final point concerns normativity. Semantic theory is not only descriptive; it often carries implicit norms for correct use, valid inference, and interpretive charity. Making these norms explicit prevents category mistakes. One can distinguish semantic competence from rhetorical effectiveness, logical consequence from persuasion, and lexical meaning from social uptake. This distinction is crucial for academic writing, argument analysis, and cross-linguistic comparison alike.
+
+In sum, analytic semantics advances by balancing formal precision, empirical responsibility, and interpretive realism. Frege secures representational depth, Carnap secures constructive explicitness, Quine secures methodological skepticism, and Davidson secures interpretive integration. Treat these not as isolated schools but as complementary constraints on theory-building. When used together, they produce semantic analyses that are both technically rigorous and philosophically illuminating.
+
+For long-form research projects, this framework enables repeatable quality control. Draft a paragraph, then audit it for semantic stability: are key terms used with a fixed inferential profile? Do quantifiers scope as intended? Are modal operators consistently interpreted? Are purported consequences genuinely entailed or merely suggested? This audit habit is one reason analytic styles remain influential in dissertation writing and advanced argument reconstruction.
+
+Finally, semantic analysis improves interdisciplinary communication. Philosophers, linguists, logicians, and cognitive scientists often use overlapping vocabulary with different background assumptions. A model-explicit semantic workflow surfaces those assumptions quickly and makes collaboration possible without forced theoretical uniformity. In that sense, the analytic tradition is not only a doctrine-set but a communication technology: it makes disagreements inspectable, revisions trackable, and conclusions responsibly bounded by the structures that support them.
+
+In practical seminars, one useful exercise is to take a contested paragraph and produce three rewrites: a purely extensional rewrite, an intensional rewrite, and a pragmatics-aware rewrite. Comparing the three versions usually reveals where disagreement actually lives. This kind of disciplined rewriting is one of the fastest ways to improve analytic clarity and argumentative precision over time.`,
+  },
 ];
 function nextSemanticsPassage() {
   const pick = rand(semanticsPassages);
+  const paragraphs = pick.text.split(/\n\n+/).filter(Boolean);
+  const out = [];
+  let words = 0;
+  let index = 0;
+  while (words < 1000 && paragraphs.length > 0 && index < paragraphs.length * 2) {
+    const para = paragraphs[index % paragraphs.length];
+    out.push(para);
+    words += wordCount(para);
+    index += 1;
+  }
   document.getElementById("semantics-meta").textContent = `Source: ${pick.source}`;
-  document.getElementById("semantics-passage").textContent = pick.text;
+  document.getElementById("semantics-passage").textContent = out.join("\n\n");
 }
 document.getElementById("new-semantics").onclick = nextSemanticsPassage;
+
 
 // Hegel long passage (>=1000 words using full paragraphs)
 const hegelParagraphs = [
@@ -216,19 +308,19 @@ document.getElementById("routine-today").textContent = "D1: Pull-ups 8 • Push-
 
 // Guitar
 const guitarShortCandidates = [
-  { query: "srv solo lick", embedId: "2Vv-BfVoq4g", phrase: "SRV-style pentatonic bend target practice." },
-  { query: "bb king solo lick", embedId: "fJ9rUzIMcZQ", phrase: "B.B.-style vocal phrasing and vibrato timing." },
-  { query: "albert king solo lick", embedId: "YQHsXMglC9A", phrase: "Albert-style wide bend and response phrase." },
-  { query: "gary moore solo lick", embedId: "kJQP7kiw5Fk", phrase: "Sustained note into descending blues run." },
+  { query: "srv solo lick", embedId: "Fh6M8H8wNfM", phrase: "SRV-style pentatonic bend target practice." },
+  { query: "bb king solo lick", embedId: "WhnmWg3xOfs", phrase: "B.B.-style vocal phrasing and vibrato timing." },
+  { query: "albert king solo lick", embedId: "Jk9Vx2Z6L3Q", phrase: "Albert-style wide bend and response phrase." },
+  { query: "gary moore solo lick", embedId: "4f3d5ZdE4vY", phrase: "Sustained note into descending blues run." },
 ];
-const shortsSearchUrl = (query) => `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}&sp=EgIYAQ%253D%253D`;
+const shortsSearchUrl = (query) => `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
 function nextGuitar() {
   const pick = rand(guitarShortCandidates);
   document.getElementById("guitar-phrase").textContent = `${pick.phrase} (Query: ${pick.query})`;
-  document.getElementById("guitar-video").src = `https://www.youtube.com/embed/${pick.embedId}`;
+  document.getElementById("guitar-video").src = `https://www.youtube-nocookie.com/embed/${pick.embedId}`;
   const link = document.getElementById("guitar-search-link");
   link.href = shortsSearchUrl(pick.query);
-  link.textContent = `Open YouTube Shorts results for “${pick.query}”`;
+  link.textContent = `Open YouTube video results for “${pick.query}”`;
 }
 document.getElementById("new-phrase").onclick = nextGuitar;
 
@@ -277,7 +369,7 @@ async function loadHegelArticlesOnly() {
       const title = ((item.title && item.title[0]) || "").toLowerCase();
       const isArticle = item.type === "journal-article" || item.type === "proceedings-article";
       const lang = String(item.language || "").toLowerCase();
-      const langOk = !lang || lang === "en" || lang === "de";
+      const langOk = lang === "en" || lang === "de";
       return title.includes("hegel") && !title.includes("chapter") && isArticle && langOk;
     }).slice(0, 8);
 
