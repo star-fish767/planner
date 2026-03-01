@@ -183,10 +183,14 @@ document.getElementById("gpu-grammar").onclick = () => {
 function applyMark(color) {
   document.execCommand("styleWithCSS", false, true);
   document.execCommand("hiliteColor", false, color);
+  document.execCommand("foreColor", false, "#111827");
 }
 document.getElementById("mark-yellow").onclick = () => applyMark("#fef08a");
 document.getElementById("mark-green").onclick = () => applyMark("#bbf7d0");
-document.getElementById("clear-mark").onclick = () => document.execCommand("removeFormat", false);
+document.getElementById("clear-mark").onclick = () => {
+  document.execCommand("removeFormat", false);
+  document.execCommand("foreColor", false, "#e5e7eb");
+};
 
 function wireHighlightControls(targetId, yellowId, greenId, clearId) {
   const target = document.getElementById(targetId);
@@ -199,6 +203,7 @@ function wireHighlightControls(targetId, yellowId, greenId, clearId) {
   document.getElementById(clearId).onclick = () => {
     target.focus();
     document.execCommand("removeFormat", false);
+    document.execCommand("foreColor", false, "#e5e7eb");
   };
 }
 wireHighlightControls("semantics-passage", "sem-mark-yellow", "sem-mark-green", "sem-clear-mark");
@@ -377,44 +382,121 @@ async function loadHegelNewsLast2Weeks() {
 async function loadHegelArticlesOnly() {
   const status = document.getElementById("scopus-status");
   const list = document.getElementById("scopus-list");
-  status.textContent = "Loading publication links...";
+  status.textContent = "Loading publication links (Crossref, OpenAlex, Semantic Scholar)...";
+
+  const topicRegex = /(hegel|kant|german\s+idealism)/i;
+  const chapterRegex = /chapter/i;
+  const normalize = (title, year, url, lang, source) => ({
+    title: String(title || "Untitled").trim(),
+    year: year || "n.d.",
+    url,
+    lang: String(lang || "").toLowerCase(),
+    source,
+  });
+  const langOk = (lang) => !lang || lang === "en" || lang === "de";
+  const topicOk = (title) => topicRegex.test(title || "");
+  const isNotChapter = (title) => !chapterRegex.test(title || "");
+
   try {
-    const response = await fetch("https://api.crossref.org/works?query.title=Hegel%20Kant%20German%20Idealism&sort=published&order=desc&rows=100");
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const payload = await response.json();
-    const items = (payload?.message?.items || []).filter((item) => {
-      const title = ((item.title && item.title[0]) || "").toLowerCase();
-      const isArticle = item.type === "journal-article" || item.type === "proceedings-article";
-      const lang = String(item.language || "").toLowerCase();
-      const langOk = lang === "en" || lang === "de";
-      const topicOk = title.includes("hegel") || title.includes("kant") || title.includes("german idealism");
-      return topicOk && !title.includes("chapter") && isArticle && langOk;
-    }).slice(0, 8);
+    const [crossrefRes, openAlexRes, semanticRes] = await Promise.allSettled([
+      fetch("https://api.crossref.org/works?query.title=Hegel%20OR%20Kant%20OR%20German%20Idealism&sort=published&order=desc&rows=100"),
+      fetch("https://api.openalex.org/works?search=Hegel%20Kant%20German%20Idealism&per-page=100&sort=publication_date:desc"),
+      fetch("https://api.semanticscholar.org/graph/v1/paper/search?query=Hegel%20OR%20Kant%20OR%20German%20Idealism&limit=50&fields=title,year,url,publicationTypes"),
+    ]);
+
+    const all = [];
+
+    if (crossrefRes.status === "fulfilled" && crossrefRes.value.ok) {
+      const payload = await crossrefRes.value.json();
+      (payload?.message?.items || []).forEach((item) => {
+        const title = (item.title && item.title[0]) || "";
+        const type = item.type || "";
+        const articleTypeOk = type === "journal-article" || type === "proceedings-article";
+        const lang = String(item.language || "").toLowerCase();
+        if (topicOk(title) && isNotChapter(title) && articleTypeOk && langOk(lang)) {
+          all.push(normalize(title, item.published?.["date-parts"]?.[0]?.[0], item.DOI ? `https://doi.org/${item.DOI}` : item.URL, lang, "Crossref"));
+        }
+      });
+    }
+
+    if (openAlexRes.status === "fulfilled" && openAlexRes.value.ok) {
+      const payload = await openAlexRes.value.json();
+      (payload?.results || []).forEach((item) => {
+        const title = item.display_name || "";
+        const type = (item.type || "").toLowerCase();
+        const articleTypeOk = type.includes("article");
+        const lang = String(item.language || "").toLowerCase();
+        if (topicOk(title) && isNotChapter(title) && articleTypeOk && langOk(lang)) {
+          all.push(normalize(title, String(item.publication_year || "n.d."), item.primary_location?.landing_page_url || item.id, lang, "OpenAlex"));
+        }
+      });
+    }
+
+    if (semanticRes.status === "fulfilled" && semanticRes.value.ok) {
+      const payload = await semanticRes.value.json();
+      (payload?.data || []).forEach((item) => {
+        const title = item.title || "";
+        const pTypes = (item.publicationTypes || []).map((x) => String(x).toLowerCase());
+        const articleTypeOk = pTypes.length === 0 || pTypes.some((t) => t.includes("journal") || t.includes("conference") || t.includes("article"));
+        if (topicOk(title) && isNotChapter(title) && articleTypeOk) {
+          all.push(normalize(title, item.year, item.url, "", "Semantic Scholar"));
+        }
+      });
+    }
+
+    const dedup = new Map();
+    all.forEach((item) => {
+      const key = item.title.toLowerCase();
+      if (!dedup.has(key)) dedup.set(key, item);
+    });
+    const items = [...dedup.values()]
+      .sort((a, b) => Number(b.year || 0) - Number(a.year || 0))
+      .slice(0, 12);
 
     list.innerHTML = "";
     items.forEach((item) => {
-      const title = item.title?.[0] || "Untitled";
-      const year = item.published?.["date-parts"]?.[0]?.[0] || "n.d.";
-      const doi = item.DOI ? `https://doi.org/${item.DOI}` : item.URL;
       const li = document.createElement("li");
       const article = document.createElement("a");
-      article.href = doi || "https://www.scopus.com/results/results.uri?src=s&st1=Hegel";
+      article.href = item.url || "https://scholar.google.com/scholar?q=Hegel+Kant+German+Idealism";
       article.target = "_blank";
       article.rel = "noopener noreferrer";
-      article.textContent = `${title} (${year})`;
+      article.textContent = `${item.title} (${item.year})`;
       li.appendChild(article);
+
+      const meta = document.createElement("span");
+      meta.textContent = ` [${item.source}]`;
+      li.appendChild(meta);
+
       const scopus = document.createElement("a");
-      scopus.href = `https://www.scopus.com/results/results.uri?src=s&st1=${encodeURIComponent(title)}`;
+      scopus.href = `https://www.scopus.com/results/results.uri?src=s&st1=${encodeURIComponent(item.title)}`;
       scopus.target = "_blank";
       scopus.rel = "noopener noreferrer";
       scopus.textContent = " [Scopus search]";
       li.appendChild(scopus);
+
       list.appendChild(li);
     });
-    status.textContent = items.length ? "Recent Hegel/Kant/German Idealism articles (English/German, no chapters):" : "No recent matching Hegel/Kant/German Idealism articles found.";
+
+    status.textContent = items.length
+      ? "Recent Hegel OR Kant OR German Idealism articles (English/German when available, no chapters)."
+      : "No matches returned from API responses. Use fallback database links below.";
+
+    if (!items.length) {
+      list.innerHTML = `
+        <li><a href="https://www.scopus.com/results/results.uri?src=s&st1=Hegel%20OR%20Kant%20OR%20%22German%20Idealism%22" target="_blank" rel="noopener noreferrer">Search Scopus (Hegel OR Kant OR German Idealism)</a></li>
+        <li><a href="https://api.crossref.org/works?query.title=Hegel%20OR%20Kant%20OR%20German%20Idealism" target="_blank" rel="noopener noreferrer">Crossref query</a></li>
+        <li><a href="https://api.openalex.org/works?search=Hegel%20Kant%20German%20Idealism" target="_blank" rel="noopener noreferrer">OpenAlex query</a></li>
+        <li><a href="https://scholar.google.com/scholar?q=Hegel+Kant+German+Idealism" target="_blank" rel="noopener noreferrer">Google Scholar query</a></li>
+      `;
+    }
   } catch {
-    list.innerHTML = `<li><a href="https://www.scopus.com/results/results.uri?src=s&st1=Hegel%20OR%20Kant%20OR%20%22German%20Idealism%22" target="_blank" rel="noopener noreferrer">Open Scopus title search (Hegel OR Kant OR German Idealism)</a></li>`;
-    status.textContent = "Could not fetch API data directly; use fallback link above.";
+    list.innerHTML = `
+      <li><a href="https://www.scopus.com/results/results.uri?src=s&st1=Hegel%20OR%20Kant%20OR%20%22German%20Idealism%22" target="_blank" rel="noopener noreferrer">Search Scopus (Hegel OR Kant OR German Idealism)</a></li>
+      <li><a href="https://api.crossref.org/works?query.title=Hegel%20OR%20Kant%20OR%20German%20Idealism" target="_blank" rel="noopener noreferrer">Crossref query</a></li>
+      <li><a href="https://api.openalex.org/works?search=Hegel%20Kant%20German%20Idealism" target="_blank" rel="noopener noreferrer">OpenAlex query</a></li>
+      <li><a href="https://scholar.google.com/scholar?q=Hegel+Kant+German+Idealism" target="_blank" rel="noopener noreferrer">Google Scholar query</a></li>
+    `;
+    status.textContent = "Could not fetch API data directly; use fallback database links above.";
   }
 }
 document.getElementById("refresh-hegel-news").onclick = () => { loadHegelNewsLast2Weeks(); loadHegelArticlesOnly(); };

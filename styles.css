@@ -64,6 +64,8 @@ button:hover { background: #2563eb; }
   .split, .task-lists { grid-template-columns: 1fr; }
 }
 
-.highlightable { min-height: 220px; }
+.highlightable { min-height: 220px; color: #e5e7eb; caret-color: #e5e7eb; }
 .highlightable:focus { outline: 2px solid #60a5fa; }
 #guitar-tabs { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+.highlightable [style*="background-color"] { color: #111827 !important; }
