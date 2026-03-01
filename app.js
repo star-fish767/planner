@@ -188,6 +188,22 @@ document.getElementById("mark-yellow").onclick = () => applyMark("#fef08a");
 document.getElementById("mark-green").onclick = () => applyMark("#bbf7d0");
 document.getElementById("clear-mark").onclick = () => document.execCommand("removeFormat", false);
 
+function wireHighlightControls(targetId, yellowId, greenId, clearId) {
+  const target = document.getElementById(targetId);
+  const highlight = (color) => {
+    target.focus();
+    applyMark(color);
+  };
+  document.getElementById(yellowId).onclick = () => highlight("#fef08a");
+  document.getElementById(greenId).onclick = () => highlight("#bbf7d0");
+  document.getElementById(clearId).onclick = () => {
+    target.focus();
+    document.execCommand("removeFormat", false);
+  };
+}
+wireHighlightControls("semantics-passage", "sem-mark-yellow", "sem-mark-green", "sem-clear-mark");
+wireHighlightControls("hegel-paragraph", "hegel-mark-yellow", "hegel-mark-green", "hegel-clear-mark");
+
 // Semantics passages
 const semanticsPassages = [
   {
@@ -306,21 +322,22 @@ document.getElementById("save-habits").onclick = () => {
 };
 document.getElementById("routine-today").textContent = "D1: Pull-ups 8 • Push-ups 18 • 5kg lifts 15 per side.";
 
-// Guitar
-const guitarShortCandidates = [
-  { query: "srv solo lick", embedId: "Fh6M8H8wNfM", phrase: "SRV-style pentatonic bend target practice." },
-  { query: "bb king solo lick", embedId: "WhnmWg3xOfs", phrase: "B.B.-style vocal phrasing and vibrato timing." },
-  { query: "albert king solo lick", embedId: "Jk9Vx2Z6L3Q", phrase: "Albert-style wide bend and response phrase." },
-  { query: "gary moore solo lick", embedId: "4f3d5ZdE4vY", phrase: "Sustained note into descending blues run." },
+// Guitar (shoegaze chord/progression generator)
+const shoegazeChordShapes = [
+  { chord: "Emaj7", tab: "e|-0-\nB|-0-\nG|-1-\nD|-1-\nA|-2-\nE|-0-" },
+  { chord: "Cmaj7", tab: "e|-0-\nB|-0-\nG|-0-\nD|-2-\nA|-3-\nE|-x-" },
+  { chord: "Dadd9", tab: "e|-0-\nB|-3-\nG|-2-\nD|-0-\nA|-x-\nE|-x-" },
+  { chord: "Aadd9", tab: "e|-0-\nB|-0-\nG|-6-\nD|-7-\nA|-0-\nE|-x-" },
+  { chord: "Bsus2", tab: "e|-2-\nB|-2-\nG|-4-\nD|-4-\nA|-2-\nE|-x-" },
+  { chord: "Gmaj7", tab: "e|-2-\nB|-3-\nG|-4-\nD|-4-\nA|-x-\nE|-3-" },
+  { chord: "F#m11", tab: "e|-0-\nB|-0-\nG|-2-\nD|-2-\nA|-4-\nE|-2-" },
+  { chord: "Em9", tab: "e|-0-\nB|-0-\nG|-0-\nD|-0-\nA|-2-\nE|-0-" },
 ];
-const shortsSearchUrl = (query) => `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
 function nextGuitar() {
-  const pick = rand(guitarShortCandidates);
-  document.getElementById("guitar-phrase").textContent = `${pick.phrase} (Query: ${pick.query})`;
-  document.getElementById("guitar-video").src = `https://www.youtube-nocookie.com/embed/${pick.embedId}`;
-  const link = document.getElementById("guitar-search-link");
-  link.href = shortsSearchUrl(pick.query);
-  link.textContent = `Open YouTube video results for “${pick.query}”`;
+  const pool = [...shoegazeChordShapes].sort(() => Math.random() - 0.5);
+  const progression = pool.slice(0, 4);
+  document.getElementById("guitar-phrase").textContent = `Progression: ${progression.map((c) => c.chord).join(" → ")}`;
+  document.getElementById("guitar-tabs").textContent = progression.map((c, idx) => `Chord ${idx + 1}: ${c.chord}\n${c.tab}`).join("\n\n");
 }
 document.getElementById("new-phrase").onclick = nextGuitar;
 
@@ -362,7 +379,7 @@ async function loadHegelArticlesOnly() {
   const list = document.getElementById("scopus-list");
   status.textContent = "Loading publication links...";
   try {
-    const response = await fetch("https://api.crossref.org/works?query.title=Hegel&sort=published&order=desc&rows=30");
+    const response = await fetch("https://api.crossref.org/works?query.title=Hegel%20Kant%20German%20Idealism&sort=published&order=desc&rows=100");
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const payload = await response.json();
     const items = (payload?.message?.items || []).filter((item) => {
@@ -370,7 +387,8 @@ async function loadHegelArticlesOnly() {
       const isArticle = item.type === "journal-article" || item.type === "proceedings-article";
       const lang = String(item.language || "").toLowerCase();
       const langOk = lang === "en" || lang === "de";
-      return title.includes("hegel") && !title.includes("chapter") && isArticle && langOk;
+      const topicOk = title.includes("hegel") || title.includes("kant") || title.includes("german idealism");
+      return topicOk && !title.includes("chapter") && isArticle && langOk;
     }).slice(0, 8);
 
     list.innerHTML = "";
@@ -393,9 +411,9 @@ async function loadHegelArticlesOnly() {
       li.appendChild(scopus);
       list.appendChild(li);
     });
-    status.textContent = items.length ? "Recent Hegel-related articles (English/German, no chapters):" : "No recent matching Hegel articles found.";
+    status.textContent = items.length ? "Recent Hegel/Kant/German Idealism articles (English/German, no chapters):" : "No recent matching Hegel/Kant/German Idealism articles found.";
   } catch {
-    list.innerHTML = `<li><a href="https://www.scopus.com/results/results.uri?src=s&st1=Hegel" target="_blank" rel="noopener noreferrer">Open Scopus Hegel title search</a></li>`;
+    list.innerHTML = `<li><a href="https://www.scopus.com/results/results.uri?src=s&st1=Hegel%20OR%20Kant%20OR%20%22German%20Idealism%22" target="_blank" rel="noopener noreferrer">Open Scopus title search (Hegel OR Kant OR German Idealism)</a></li>`;
     status.textContent = "Could not fetch API data directly; use fallback link above.";
   }
 }

@@ -90,14 +90,14 @@
         <h2 class="window-title">8) Random Analytic Philosophy Passage (1000 words)</h2>
         <p class="hint">Verbatim-style passages from chapter body text (intro/foreword skipped).</p>
         <p id="semantics-meta" class="hint"></p>
-        <p id="semantics-passage" class="exercise"></p>
-        <button id="new-semantics">New Passage</button>
+        <div class="row"><button id="new-semantics">New Passage</button><button id="sem-mark-yellow">Highlight yellow</button><button id="sem-mark-green">Highlight green</button><button id="sem-clear-mark">Clear highlight</button></div>
+        <p id="semantics-passage" class="exercise highlightable" contenteditable="true" spellcheck="false"></p>
       </section>
 
       <section class="window" id="hegel-window" data-title="Hegel Passage">
         <h2 class="window-title">9) Random Hegel: Science of Logic (Verbatim Excerpts)</h2>
-        <p id="hegel-paragraph" class="exercise"></p>
-        <button id="new-hegel">New Paragraph</button>
+        <div class="row"><button id="new-hegel">New Paragraph</button><button id="hegel-mark-yellow">Highlight yellow</button><button id="hegel-mark-green">Highlight green</button><button id="hegel-clear-mark">Clear highlight</button></div>
+        <p id="hegel-paragraph" class="exercise highlightable" contenteditable="true" spellcheck="false"></p>
       </section>
 
       <section class="window" id="habit-window" data-title="Habits">
@@ -112,11 +112,11 @@
         <p id="routine-today" class="exercise"></p>
       </section>
 
-      <section class="window" id="guitar-window" data-title="Guitar Videos">
-        <h2 class="window-title">11) Guitar Solo Licks (YouTube Videos)</h2>
+      <section class="window" id="guitar-window" data-title="Shoegaze Chords">
+        <h2 class="window-title">11) Random Shoegaze Chords + Progression</h2>
         <p id="guitar-phrase" class="exercise"></p>
-        <div class="row"><button id="new-phrase">Generate Guitar Video Pick</button><a id="guitar-search-link" target="_blank" rel="noopener noreferrer">Open YouTube video search</a></div>
-        <div class="shorts-wrap"><iframe id="guitar-video" src="https://www.youtube.com/embed/5aP0g9BvjXE" title="Guitar video" allowfullscreen></iframe></div>
+        <div class="row"><button id="new-phrase">Generate Shoegaze Progression</button></div>
+        <p id="guitar-tabs" class="exercise"></p>
       </section>
 
       <section class="window" id="hegel-news-window" data-title="Hegelpd News + Publications">
@@ -124,7 +124,7 @@
         <div class="row"><button id="refresh-hegel-news">Refresh News + Publications</button></div>
         <p id="hegel-news-status" class="hint">Loading latest posts...</p>
         <ul id="hegel-news-list" class="news-list"></ul>
-        <h3>Latest article publications on Hegel (no chapters)</h3>
+        <h3>Latest article publications on Hegel, Kant, or German Idealism (no chapters)</h3>
         <p id="scopus-status" class="hint">Loading publication links...</p>
         <ul id="scopus-list" class="news-list"></ul>
       </section>
