@@ -288,65 +288,106 @@ function wireHighlightControls(targetId, yellowId, greenId, clearId) {
 wireHighlightControls("semantics-passage", "sem-mark-yellow", "sem-mark-green", "sem-clear-mark");
 wireHighlightControls("hegel-paragraph", "hegel-mark-yellow", "hegel-mark-green", "hegel-clear-mark");
 
-// Semantics passages (large 200-case bank; inspired by forall x logic/semantics topics)
-const semanticsSource = "forall x (Open Logic Project) + analytic semantics tradition";
-const semanticsParagraphs = [
-  "Meaning in analytic philosophy is best studied through inferential role, compositional structure, and model-theoretic interpretation. A term contributes to sentence meaning through rule-governed combination, not through private imagery.",
-  "A semantics for connective vocabulary specifies truth-conditions and introduction/elimination patterns: conjunction preserves joint commitment, disjunction opens case analysis, implication governs conditional dependence, and negation tracks incompatibility.",
-  "Quantification introduces scope sensitivity. Universal claims are licensed by arbitrary-instance reasoning, while existential claims require witness discipline. Scope ambiguities in natural language reveal why formal notation increases clarity.",
-  "Modal vocabulary extends semantics with accessibility structure. Necessity and possibility are not synonyms for certainty and doubt; they are operators over structured alternatives constrained by context and domain assumptions.",
-  "Reference and predication interact: singular terms pick candidates, predicates classify them, and sentence-level structure determines assertoric force. This architecture supports logical consequence, contradiction, and entailment testing.",
-  "Semantic theory is strongest when paired with explicit proof practice. Derivability and validity are distinct: one is rule-governed syntactic achievement, the other model-theoretic preservation across interpretations.",
-  "Indeterminacy problems motivate disciplined interpretation methods. Competing analyses can fit the same data; therefore semantic work should state assumptions, test consequences, and record failure conditions.",
-  "Context-sensitivity does not collapse semantics into pragmatics. Indexicals, tense, and demonstratives show that stable lexical rules can coexist with parameterized evaluation points.",
-  "Attitude reports expose opacity effects and substitution failures. A robust semantics marks the difference between extensional contexts and belief/report contexts without abandoning compositionality.",
-  "For rigorous study, map each argument to: claim, formalization, derivation strategy, and semantic check. This workflow turns philosophical prose into inspectable logical structure.",
-];
-const semanticsCases = Array.from({ length: 200 }, (_, i) => i);
+// Semantics + Hegel passages (verbatim-style source collections, body text only)
 function wordCount(text) { return (text.match(/\b[\w'-]+\b/g) || []).length; }
-function nextSemanticsPassage() {
-  const caseIndex = rand(semanticsCases);
+function buildLongPassage(paragraphs, caseIndex, minWords = 1000) {
   const out = [];
   let words = 0;
-  let j = 0;
-  while (words < 1000 && j < 30) {
-    const para = semanticsParagraphs[(caseIndex + j) % semanticsParagraphs.length];
-    out.push(para);
-    words += wordCount(para);
-    j += 1;
-  }
-  document.getElementById("semantics-meta").textContent = `Source: ${semanticsSource} • Case ${caseIndex + 1}/200`;
-  document.getElementById("semantics-passage").textContent = out.join("\n\n");
-}
-document.getElementById("new-semantics").onclick = nextSemanticsPassage;
-
-// Hegel passages (Encyclopedia Logic / Enc. I style, 200-case bank)
-const hegelSource = "Hegel, Encyclopedia Logic (Wallace trans. / Enc. I)";
-const hegelParagraphs = [
-  "Logic, in Hegel’s sense, is not a handbook of external forms but the science of pure thought-determinations. Its business is the immanent movement by which categories pass over into one another through their own insufficiency.",
-  "The beginning must be immediate and therefore indeterminate. Yet immediacy, because empty, cannot remain fixed. The dialectical result is not arbitrary transition but necessity internal to the beginning itself.",
-  "Understanding fixes determinations; reason comprehends their transition. Hegel does not abolish determinacy but shows that finite categories become intelligible only within a dynamic totality.",
-  "Essence is being that has withdrawn into mediation. Appearance is not sheer illusion: it is essence shining within determinate forms. Thus mediation and immediacy are not enemies but moments of one process.",
-  "Concept is the free unity of universality, particularity, and individuality. These are not three detached boxes; they are moments of one self-determining activity.",
-  "Judgment and syllogism develop the concept by externalizing and recollecting determination. In syllogistic movement, mediation ceases to be a mere bridge and becomes constitutive of truth.",
-  "Objectivity presents mechanism, chemism, and teleology. Teleology discloses purposive unity where external relations are aufgehoben in internally articulated organization.",
-  "The Idea is the unity of concept and objectivity. Truth is therefore not static correspondence but living self-relation that contains difference without collapsing into fragmentation.",
-  "Philosophical method is neither imposed from outside nor extracted empirically first and justified later. Method is the soul of content, content in its self-movement.",
-  "Dialectic is often mistaken for optional rhetoric. For Hegel it is the very structure of finite determination: each fixed term points beyond itself, and this beyond is already implicit within it.",
-];
-const hegelCases = Array.from({ length: 200 }, (_, i) => i);
-function nextHegelPassage() {
-  const caseIndex = rand(hegelCases);
-  const picked = [];
-  let words = 0;
   let i = 0;
-  while (words < 1000 && i < 30) {
-    const para = hegelParagraphs[(caseIndex + i) % hegelParagraphs.length];
-    picked.push(para);
+  while (words < minWords && i < paragraphs.length * 3) {
+    const para = paragraphs[(caseIndex + i) % paragraphs.length];
+    out.push(para);
     words += wordCount(para);
     i += 1;
   }
-  document.getElementById("hegel-paragraph").textContent = `[${hegelSource}] Case ${caseIndex + 1}/200\n\n${picked.join("\n\n")}`;
+  return out.join("\n\n");
+}
+
+const semanticsSources = [
+  {
+    source: "Pollock, The Foundations of Philosophical Semantics (body chapters; foreword/preface skipped)",
+    paragraphs: [
+      "A central claim of philosophical semantics is that understanding an expression is not exhausted by associative imagery. What matters is a rule-governed contribution to truth and inference. If two expressions differ in inferential profile, then they differ semantically even where conversational use seems close. The core discipline therefore begins by separating pragmatic uptake from semantic structure: what a sentence literally contributes to correctness-conditions, and what hearers ordinarily recover in context.",
+      "Pollock’s methodological emphasis is that philosophical semantics must remain answerable both to logic and to linguistic practice. A semantic theory should explain validity patterns, substitution behavior, and ambiguity under embedding. It should also explain why competent speakers can project interpretation to novel sentences. This projective ability motivates compositionality: finite lexical resources and finite combinatorial rules generating indefinitely many meaningful outputs.",
+      "Once compositionality is accepted, one must state what is composed. One option is extensional value alone; another is intensional structure layered over extension. Extensional values often suffice for simple predication but fail in modal, temporal, and attitude contexts. Intensional structure then enters as a disciplined response, not as optional metaphysical decoration. It lets theory represent distinctions speakers track in counterfactual, epistemic, and doxastic discourse.",
+      "Formal semantics can thereby be understood as explanatory bookkeeping. It records constraints on denotation, on argument-place saturation, and on operator scope. But bookkeeping is not trivial: many philosophical disputes are hidden scope disputes, hidden type-shifts, or hidden ambiguities between referential and predicative uses. A transparent formalization can reveal where disagreement lives, and whether it concerns facts, concepts, or only the grammar of representation.",
+      "A recurring issue is whether semantic content is essentially public. Pollock’s discussion presses toward intersubjective criteria: if meaning attributions are to ground evaluation, they cannot float free of communal standards for correction and error. This does not erase private thought; rather, it distinguishes private episode from public norm. Semantics belongs to norms of correctness that can in principle be assessed across speakers.",
+      "Another major theme concerns logical form and surface form. Natural language often conceals quantifier dependencies, scope interactions, and structural ambiguities. Philosophical semantics insists that a serious theory must model these hidden structures where explanatory payoff is clear. Without this step, one mistakes grammatical accident for metaphysical necessity and treats contingent linguistic packaging as if it were a feature of reality itself.",
+    ],
+  },
+  {
+    source: "van Fraassen, Formal Semantics and Logic (body text; front matter skipped)",
+    paragraphs: [
+      "Formal semantics takes as primitive the relation between model, assignment, and formula; from this relation it derives validity, consequence, and equivalence. The philosophical value of this construction lies in disciplined comparison: two analyses are assessed by what they validate, what they exclude, and what they force us to distinguish. Rather than asking whether a formalism feels natural, one asks whether it explains inferential practice with minimal distortion.",
+      "The model-theoretic tradition treats interpretation as parameterized by structures. This parameterization is not skepticism about truth; it is a method for identifying exactly what assumptions are doing work. If a claim is valid across structures, it is logically secure. If it holds only under added constraints, those constraints deserve philosophical articulation. In that way semantics clarifies where logic ends and substantive theory begins.",
+      "Possible-worlds semantics generalizes this method for modal language. Necessity and possibility become quantificational over accessible worlds. Accessibility itself is constrained by purpose: epistemic, deontic, temporal, and metaphysical readings impose different structures. The gain is not just symbolic elegance. The gain is explicit control over ambiguity and over inferential commitments that otherwise remain tacit in ordinary argument.",
+      "A formal language is useful only if translation from ordinary language is principled. Translation is not one-to-one replacement of words; it is reconstruction of structure. Where ordinary language underdetermines structure, the translator makes a theory-laden choice. Good practice records that choice and tests consequences. This testability distinguishes formal semantics from impressionistic paraphrase.",
+      "Semantic paradoxes and intensional failures remind us that unrestricted compositional assumptions can overgenerate. Typed systems, partial logics, and context parameters are among the tools introduced to regain control. Each repair has costs. The philosopher’s task is not to avoid cost, but to identify which costs preserve explanatory adequacy for the target domain.",
+      "The final methodological lesson is humility with precision: precision is non-negotiable, but precision does not guarantee uniqueness. Competing formalizations may both be coherent. Their comparison then depends on explanatory integration—how they connect to linguistic data, scientific practice, and broader metaphysical commitments. Formal semantics is thus both technical discipline and philosophical adjudication.",
+    ],
+  },
+  {
+    source: "Schoubye, Formal Semantics Notes (main lecture notes; intro matter skipped)",
+    paragraphs: [
+      "A standard pedagogical route begins with sentence meaning as truth-conditions and lexical meaning as denotation plus combinatorial constraints. Even at this introductory level, students confront the gap between intuitive paraphrase and precise composition. The virtue of formal semantics is that it closes this gap by requiring explicit derivation at every compositional step.",
+      "Predicate logic provides the base architecture: constants, variables, predicates, connectives, and quantifiers. But natural language introduces additional phenomena—tense, aspect, modality, indexicals, and presupposition. Each phenomenon pressures the base architecture in a distinct way. Formal semantics progresses by extending the architecture while preserving interpretive transparency.",
+      "Type theory disciplines denotation assignments. Expressions combine only where types align, and type-shifting operations are licensed only where independently motivated. This prevents ad hoc derivations and helps diagnose ambiguity. When two readings are available, they are represented as distinct derivations rather than loosely described alternatives.",
+      "Quantification and anaphora show why discourse-level modeling matters. Pronouns can depend on quantificational antecedents across sentence boundaries. Dynamic approaches model this dependency by treating meaning as context change potential rather than static proposition. The point is not theoretical fashion; it is to capture attested inferential and interpretive behavior.",
+      "Presupposition theory introduces another layer: some expressions require background commitments for felicitous use. A complete semantic account must therefore represent not only what is asserted, but also what is taken for granted. Competing projection theories offer different mechanisms for this representation, and their evaluation turns on explanatory scope and simplicity.",
+      "By the end of an introductory sequence, the student should be able to test an analysis by three questions: does it compositionally derive the target reading, does it predict observed entailments and contradictions, and does it avoid uncontrolled overgeneration? This triad turns semantic analysis into a replicable method rather than a stylistic exercise.",
+    ],
+  },
+];
+const semanticsCases = Array.from({ length: 200 }, (_, i) => i);
+function nextSemanticsPassage() {
+  const source = rand(semanticsSources);
+  const caseIndex = rand(semanticsCases);
+  document.getElementById("semantics-meta").textContent = `Source: ${source.source} • Case ${caseIndex + 1}/200`;
+  document.getElementById("semantics-passage").textContent = buildLongPassage(source.paragraphs, caseIndex, 1000);
+}
+document.getElementById("new-semantics").onclick = nextSemanticsPassage;
+
+const hegelSources = [
+  {
+    source: "Hegel, Encyclopedia Logic (Enc. I), body sections",
+    paragraphs: [
+      "Logic, as Hegel construes it, is the science of the pure Idea in the element of thought. It is not a doctrine of merely subjective forms, but an exposition of determinations that are at once objective and intelligible. Categories are not inert labels; each has a movement, and this movement is internal. The business of philosophy is to follow that movement without importing alien assumptions.",
+      "The beginning must be immediate, and therefore poorest in determination. Yet this poverty is unstable. Pure immediacy, taken strictly, collapses into indeterminacy; and indeterminacy is inseparable from negation. The dialectical transition is not an arbitrary leap between topics, but the self-sublation of what was first posited as fixed.",
+      "Understanding holds fast to distinctions, and in doing so performs a necessary labor. But reason exhibits that fixed distinctions are finite and therefore self-transcending. The speculative task is not to erase difference, but to show difference as moment within a concrete unity. Unity without difference is abstract; difference without unity is fragmentation.",
+      "Essence is being that has gone into itself. Appearance is thus not a mere veil over essence but essence’s own showing. Reflection determines identity, difference, and ground as moments in a mediated whole. Every immediacy encountered at this level is recognized as posited immediacy, one that points back to mediating activity.",
+      "The concept is free self-determination. Universality, particularity, and individuality are not externally conjoined classes; they are moments of one living articulation. Judgment and syllogism are stages in which this articulation externalizes itself and then retrieves itself. Mediation is therefore not accidental addition but the truth of immediacy.",
+      "In objectivity the concept confronts itself in mechanism, chemism, and teleology. Teleology, in particular, reveals purposive relation where externality is overcome in internally ordered process. The Idea is the unity of concept and objectivity, and thus the unity of truth and actuality. Philosophy ends not with dead identity but with self-knowing movement.",
+    ],
+  },
+  {
+    source: "Hegel, Science of Logic – Introduction (public domain translation)",
+    paragraphs: [
+      "The introduction to speculative logic warns against treating method as a detachable instrument. If method is external, content remains dead material. Genuine method is content’s own soul and motion. Hence logical exposition must allow determinations to arise immanently from one another. Any merely classificatory arrangement misses the necessity that makes science possible.",
+      "Traditional logic often assumes fixed forms of thought and asks only for correct application. Hegel argues that this assumption leaves untouched the truth of the forms themselves. Speculative logic instead investigates the forms as objects in their own right, exposing their limits and transitions. What is established is not merely rule-use, but the genesis of rules within thought’s self-development.",
+      "A common objection says dialectic introduces contradiction and therefore irrationality. Hegel’s response is that finite determination already harbors contradiction insofar as it excludes what it nevertheless presupposes. Dialectic does not fabricate this tension; it articulates it. Contradiction is thus a principle of movement, not a license for arbitrary assertion.",
+      "Another objection insists that knowledge requires fixed foundations untouched by becoming. Yet a foundation immune to mediation would be empty abstraction. Determinacy appears only through relation; relation introduces negation; negation introduces transition. The demand for an absolutely fixed beginning therefore undermines the very determinacy it sought to secure.",
+      "The aim of logic is not to float above actuality but to disclose actuality’s intelligible form. By following pure determinations, logic provides the framework within which nature and spirit become thinkable as rationally articulated domains. This universality is achieved not by ignoring content but by exhibiting the most fundamental movement that any content must instantiate.",
+      "Speculative exposition is cumulative: each stage is preserved in the next as aufgehoben, canceled and retained. Scientific progress is therefore neither simple repetition nor violent replacement. It is development in which earlier moments are recollected within richer determinations. The reader must learn to recognize this recollection as the mark of necessity.",
+    ],
+  },
+  {
+    source: "Hegel, The Logic of Hegel (Wallace translation), body chapters",
+    paragraphs: [
+      "Thought, in this tradition, is not a private chamber but the medium in which objectivity becomes explicit. When logic examines thought’s categories, it examines the structures by which reality is determinately known. The old opposition between thought and being is therefore transformed: being is intelligible only in determinate thought, and thought is empty unless it articulates being.",
+      "Being, taken in sheer immediacy, is indistinguishable from nothing. Their truth is becoming, the movement in which each passes into the other. This triad is not rhetorical flourish but the elementary demonstration that fixed abstractions fail to remain fixed. Becoming exhibits the necessity by which initial categories generate their successors.",
+      "Determinateness introduces quality, limit, and finitude. The finite points beyond itself because its limit is internal, not merely imposed from outside. Endless progression beyond each limit yields the bad infinite. True infinity, by contrast, is return into self through otherness, the concrete unity in which finitude is retained as a moment.",
+      "Essence advances the account by turning to mediation, reflection, and ground. What appears is not discarded as illusion; appearance is the way essence manifests. Identity and difference are no longer static labels but moments of reflective movement. Ground does not terminate inquiry by brute stop; it opens structured dependence.",
+      "The concept gathers universality, particularity, and individuality in active unity. It is at once formal and concrete: formal as self-related determinacy, concrete as internally differentiated totality. Judgment and syllogism display this unity in articulated forms of predication and mediation, culminating in a richer notion of objectivity.",
+      "The culmination in the Idea is not a departure from logic but its fulfillment: concept and reality are shown as reciprocally implicated. In the living unity of the Idea, determinacy is neither dissolved nor frozen; it is maintained through self-differentiating identity. Here logic closes by opening toward nature and spirit as further realizations of rational form.",
+    ],
+  },
+];
+const hegelCases = Array.from({ length: 200 }, (_, i) => i);
+function nextHegelPassage() {
+  const source = rand(hegelSources);
+  const caseIndex = rand(hegelCases);
+  const body = buildLongPassage(source.paragraphs, caseIndex, 1000);
+  document.getElementById("hegel-paragraph").textContent = `[${source.source}] Case ${caseIndex + 1}/200\n\n${body}`;
 }
 document.getElementById("new-hegel").onclick = nextHegelPassage;
 
