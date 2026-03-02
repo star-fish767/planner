@@ -11,11 +11,12 @@ import socket
 import urllib.parse
 import urllib.request
 import webbrowser
+import os
 
 
-def find_open_port() -> int:
+def find_open_port(host: str = "127.0.0.1") -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind(("127.0.0.1", 0))
+        sock.bind((host, 0))
         return int(sock.getsockname()[1])
 
 
@@ -154,8 +155,11 @@ def _hegel_articles_payload():
 
 def main() -> None:
     root = Path(__file__).resolve().parent
-    port = find_open_port()
-    url = f"http://127.0.0.1:{port}/index.html"
+    bind_host = os.environ.get("PLANNER_HOST", "0.0.0.0")
+    port_env = os.environ.get("PLANNER_PORT")
+    port = int(port_env) if port_env else find_open_port(bind_host if bind_host != "0.0.0.0" else "127.0.0.1")
+    open_host = os.environ.get("PLANNER_OPEN_HOST", "127.0.0.1")
+    url = f"http://{open_host}:{port}/index.html"
 
     class Handler(SimpleHTTPRequestHandler):
         def __init__(self, *args, **kwargs):
@@ -183,9 +187,10 @@ def main() -> None:
                 return
             super().do_GET()
 
-    httpd = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    httpd = ThreadingHTTPServer((bind_host, port), Handler)
     print("Planner Studio Pro")
     print(f"Serving: {root}")
+    print(f"Bind:    {bind_host}:{port}")
     print(f"Open:    {url}")
     print("Press Ctrl+C to stop.")
     webbrowser.open(url)
