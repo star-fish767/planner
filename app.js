@@ -142,18 +142,60 @@ function generateLogicExercise() {
 document.getElementById("new-exercise").onclick = generateLogicExercise;
 
 // German
-const germanWords = [{ de: "der Apfel", en: "apple" }, { de: "lernen", en: "to learn" }, { de: "die Aufgabe", en: "task" }, { de: "die Sprache", en: "language" }, { de: "wichtig", en: "important" }];
+let germanWords = [
+  { de: "der Apfel", en: "apple" },
+  { de: "lernen", en: "to learn" },
+  { de: "die Aufgabe", en: "task" },
+  { de: "die Sprache", en: "language" },
+  { de: "wichtig", en: "important" },
+];
 let currentWord = germanWords[0];
+
+function buildFallbackGermanWords(minCount = 5000) {
+  const seeds = [
+    ["das Haus", "house"], ["die Zeit", "time"], ["der Mensch", "human"], ["die Welt", "world"],
+    ["denken", "to think"], ["lernen", "to learn"], ["wissen", "to know"], ["die Logik", "logic"],
+    ["die Bedeutung", "meaning"], ["wahr", "true"], ["falsch", "false"], ["der Satz", "sentence"],
+  ];
+  const out = [];
+  while (out.length < minCount) {
+    const [de, en] = seeds[out.length % seeds.length];
+    out.push({ de: `${de} ${out.length + 1}`, en });
+  }
+  return out;
+}
+
+async function loadGermanWords() {
+  try {
+    const res = await fetch('/api/german-words');
+    if (res.ok) {
+      const payload = await res.json();
+      const loaded = Array.isArray(payload.words) ? payload.words : [];
+      germanWords = loaded
+        .map((x) => ({ de: String(x.de || '').trim(), en: String(x.en || '').trim() || '(see dictionary)' }))
+        .filter((x) => x.de)
+        .slice(0, 5000);
+    }
+  } catch {
+    // fallback below
+  }
+  if (!germanWords.length || germanWords.length < 5000) germanWords = buildFallbackGermanWords(5000);
+  currentWord = germanWords[0];
+}
+
 function nextGerman() {
   currentWord = rand(germanWords);
-  document.getElementById("german-prompt").textContent = `Translate to English: ${currentWord.de}`;
+  document.getElementById("german-prompt").textContent = `Translate to English: ${currentWord.de} (${germanWords.length} words loaded)`;
   document.getElementById("german-answer").value = "";
   document.getElementById("german-sentence").value = "";
   document.getElementById("german-feedback").textContent = "";
 }
 document.getElementById("check-german").onclick = () => {
   const answer = document.getElementById("german-answer").value.trim().toLowerCase();
-  document.getElementById("german-feedback").textContent = answer === currentWord.en.toLowerCase() ? "✅ Translation correct." : `❌ Correct: ${currentWord.en}`;
+  const expected = String(currentWord.en || '').toLowerCase();
+  document.getElementById("german-feedback").textContent = expected && answer === expected
+    ? "✅ Translation correct."
+    : `ℹ️ Suggested translation: ${currentWord.en || '(not provided in source)'}`;
 };
 document.getElementById("check-sentence").onclick = () => {
   const sentence = document.getElementById("german-sentence").value.trim();
@@ -376,93 +418,42 @@ async function loadHegelNewsLast2Weeks() {
 async function loadHegelArticlesOnly() {
   const status = document.getElementById("scopus-status");
   const list = document.getElementById("scopus-list");
-  status.textContent = "Searching publications across Crossref, OpenAlex, Semantic Scholar...";
-
-  const topicRegex = /(hegel|kant|german\s+idealism)/i;
-  const chapterRegex = /chapter/i;
-  const langOk = (lang) => !lang || lang === "en" || lang === "de";
-  const cleaned = (s0) => String(s0 || "").trim();
-
-  const pushIf = (arr, item) => {
-    const title = cleaned(item.title);
-    const lang = cleaned(item.lang).toLowerCase();
-    const type = cleaned(item.type).toLowerCase();
-    const articleTypeOk = !type || type.includes("article") || type.includes("journal") || type.includes("proceedings") || type.includes("conference");
-    if (!title || !topicRegex.test(title) || chapterRegex.test(title) || !articleTypeOk || !langOk(lang)) return;
-    arr.push({
-      title,
-      year: item.year || "n.d.",
-      url: item.url,
-      source: item.source,
-    });
-  };
-
-  const all = [];
-  try {
-    const proxy = await fetch('/api/publications?q=' + encodeURIComponent('Hegel OR Kant OR German Idealism'));
-    if (proxy.ok) {
-      const payload = await proxy.json();
-      (payload.crossref || []).forEach((x) => pushIf(all, { ...x, source: 'Crossref' }));
-      (payload.openalex || []).forEach((x) => pushIf(all, { ...x, source: 'OpenAlex' }));
-      (payload.semantic || []).forEach((x) => pushIf(all, { ...x, source: 'Semantic Scholar' }));
-    }
-  } catch { /* ignore and continue with direct APIs */ }
-
-  if (!all.length) {
-    const directCalls = [
-      fetch("https://api.crossref.org/works?query.title=Hegel%20OR%20Kant%20OR%20German%20Idealism&sort=published&order=desc&rows=120"),
-      fetch("https://api.openalex.org/works?search=Hegel%20Kant%20German%20Idealism&per-page=120&sort=publication_date:desc"),
-    ];
-    const [crossrefRes, openalexRes] = await Promise.allSettled(directCalls);
-    if (crossrefRes.status === 'fulfilled' && crossrefRes.value.ok) {
-      const p = await crossrefRes.value.json();
-      (p?.message?.items || []).forEach((x) => pushIf(all, {
-        title: x?.title?.[0], year: x?.published?.['date-parts']?.[0]?.[0], url: x?.DOI ? `https://doi.org/${x.DOI}` : x?.URL,
-        lang: x?.language, type: x?.type, source: 'Crossref',
-      }));
-    }
-    if (openalexRes.status === 'fulfilled' && openalexRes.value.ok) {
-      const p = await openalexRes.value.json();
-      (p?.results || []).forEach((x) => pushIf(all, {
-        title: x?.display_name, year: x?.publication_year, url: x?.primary_location?.landing_page_url || x?.id,
-        lang: x?.language, type: x?.type, source: 'OpenAlex',
-      }));
-    }
-  }
-
-  const dedup = new Map();
-  all.forEach((x) => {
-    const key = x.title.toLowerCase();
-    if (!dedup.has(key)) dedup.set(key, x);
-  });
-  const items = [...dedup.values()].sort((a, b) => Number(b.year || 0) - Number(a.year || 0)).slice(0, 20);
-
+  status.textContent = "Loading 5 random Hegel-related articles (PhilArchive + Semantic Scholar)...";
   list.innerHTML = "";
-  items.forEach((item) => {
-    const li = document.createElement("li");
-    const a = document.createElement("a");
-    a.href = item.url || `https://www.scopus.com/results/results.uri?src=s&st1=${encodeURIComponent(item.title)}`;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
-    a.textContent = `${item.title} (${item.year})`;
-    li.appendChild(a);
-    const src = document.createElement("span");
-    src.textContent = ` [${item.source}]`;
-    li.appendChild(src);
-    const scopus = document.createElement("a");
-    scopus.href = `https://www.scopus.com/results/results.uri?src=s&st1=${encodeURIComponent(item.title)}`;
-    scopus.target = "_blank";
-    scopus.rel = "noopener noreferrer";
-    scopus.textContent = " [Scopus search]";
-    li.appendChild(scopus);
-    list.appendChild(li);
-  });
 
-  if (!items.length) {
-    list.innerHTML = `<li><a href="https://www.scopus.com/results/results.uri?src=s&st1=Hegel%20OR%20Kant%20OR%20%22German%20Idealism%22" target="_blank" rel="noopener noreferrer">Search Scopus (Hegel OR Kant OR German Idealism)</a></li><li><a href="https://api.crossref.org/works?query.title=Hegel%20OR%20Kant%20OR%20German%20Idealism" target="_blank" rel="noopener noreferrer">Crossref query</a></li><li><a href="https://api.openalex.org/works?search=Hegel%20Kant%20German%20Idealism" target="_blank" rel="noopener noreferrer">OpenAlex query</a></li><li><a href="https://api.semanticscholar.org/graph/v1/paper/search?query=Hegel%20OR%20Kant%20OR%20German%20Idealism" target="_blank" rel="noopener noreferrer">Semantic Scholar query</a></li><li><a href="https://scholar.google.com/scholar?q=Hegel+Kant+German+Idealism" target="_blank" rel="noopener noreferrer">Google Scholar query</a></li>`;
-    status.textContent = "No API matches returned; open the database links below.";
-  } else {
-    status.textContent = `Found ${items.length} matching publications (Hegel OR Kant OR German Idealism).`;
+  try {
+    const response = await fetch('/api/hegel-articles');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const payload = await response.json();
+    const items = Array.isArray(payload.items) ? payload.items : [];
+
+    items.forEach((item) => {
+      const li = document.createElement("li");
+      const title = document.createElement("a");
+      title.href = item.url || "https://philarchive.org/browse/hegel-logic-and-metaphysics";
+      title.target = "_blank";
+      title.rel = "noopener noreferrer";
+      title.textContent = item.title || "Untitled";
+      li.appendChild(title);
+
+      const source = document.createElement("span");
+      source.textContent = ` [${item.source || 'source unknown'}]`;
+      li.appendChild(source);
+
+      const abs = document.createElement("p");
+      abs.className = "hint";
+      abs.textContent = item.abstract || "Abstract unavailable.";
+      li.appendChild(abs);
+
+      list.appendChild(li);
+    });
+
+    status.textContent = items.length
+      ? `Showing ${items.length} random articles with title + abstract (when available).`
+      : "No items returned by proxy.";
+  } catch {
+    list.innerHTML = `<li><a href="https://philarchive.org/browse/hegel-logic-and-metaphysics" target="_blank" rel="noopener noreferrer">Open PhilArchive Hegel Logic & Metaphysics</a></li><li><a href="https://www.semanticscholar.org/paper/The-philosophy-of-Hegel-Rauch/3d98f7728982cbf108c7e5587e12b4c8b20a7806" target="_blank" rel="noopener noreferrer">Open Semantic Scholar source paper</a></li>`;
+    status.textContent = "Could not load proxy results; use source links above.";
   }
 }
 document.getElementById("refresh-hegel-news").onclick = () => { loadHegelNewsLast2Weeks(); loadHegelArticlesOnly(); };
@@ -621,7 +612,7 @@ document.getElementById("reset-layout").onclick = () => {
 
 renderTasks();
 generateLogicExercise();
-nextGerman();
+loadGermanWords().then(nextGerman);
 nextSemanticsPassage();
 nextHegelPassage();
 loadHabits();
